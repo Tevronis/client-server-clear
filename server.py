@@ -8,20 +8,14 @@ from twisted.protocols.basic import LineOnlyReceiver
 from utils import LocalJSON
 
 
-def createDefJSON(dir):
-    # TODO: check if file exist
-    try:
-        with open(dir):
-            pass
-    except:
-        e = open(dir, 'w')
-        e.close()
+def create_default_JSON(dir):
+    # TODO: check if file exist TODO need validation
+    open(dir, 'w').close()
     with open(dir) as f:
         if len(f.readline()) > 1:
             return
     with open(dir, 'w') as f:
         f.write('{"mails":[]}')
-
 
 
 def add_item_json(dir, field, item):
@@ -32,7 +26,7 @@ def add_item_json(dir, field, item):
         json.dump(jsn, json_file)
 
 
-def setInbox(js):
+def set_inbox(js):
     if not (os.path.exists('Users/' + js['from'])):
         os.mkdir("""Users\{0}""".format(js['from']))
     for to in js['recivers']:
@@ -40,15 +34,15 @@ def setInbox(js):
         add_item_json(dir, 'mails', str(js['id']))
 
 
-def dumpJsons(js):
+def dump_jsons(js):
     try:
         if not (os.path.exists('Users/' + js['from'])):
             os.mkdir("""Users\{0}""".format(js['from']))
         mail_fold = """Mails\{0}""".format(str(js['id']))
         user_fold_sent = """Users\{0}\mails_sent.json""".format(js['from'])
 
-        createDefJSON(user_fold_sent)
-        setInbox(js)
+        create_default_JSON(user_fold_sent)
+        set_inbox(js)
         add_item_json(user_fold_sent, 'mails', str(js['id']))
         with open(mail_fold, 'w') as f:
             f.write(json.dumps(js))
@@ -57,63 +51,46 @@ def dumpJsons(js):
         raise Exception("message not JSON!: " + json.dumps(js))
 
 
-def getMailsSentID(js):
+def get_header_mail(dir):
+    result = {'mails': []}
+    with open(dir) as json_file:
+        jsn = json.load(json_file)
+        mails = jsn["mails"]
+        for message_id in mails:
+            mail = """Mails\{0}""".format(message_id)
+            with open(mail) as ffile:
+                jsn = json.load(ffile)
+                obj_mail = {'from': jsn['from'], 'header': jsn['header'], 'id': jsn['id']}
+                result['mails'].append(obj_mail)
+    return result
+
+
+def get_mails_sent_id(js):
     try:
         mail_fold = """Users\{0}\mails_sent.json""".format(str(js['login']))
-        s_ids = []
-        result = {'mails': []}
-        try:
-            with open(mail_fold) as f:
-                jj = json.load(f)
-                mm = jj["mails"]
-                for i in mm:
-                    s_ids.append(i)
-            for id_mail in s_ids:
-                mail = """Mails\{0}""".format(id_mail)
-                with open(mail) as f:
-                    jj = json.load(f)
-                    obj_mail = {'from': jj['from'], 'header': jj['header'], 'id': jj['id']}
-                    result['mails'].append(obj_mail)
-        except:
-            pass
+
+        result = get_header_mail(mail_fold)
+
         result = LocalJSON.addCommand(result, "SENT")
         return result
     except:
         raise Exception("GETSENT with: " + json.dumps(js))
 
 
-def getMailsInboxID(js):
+def get_mails_inbox_id(js):
     try:
         mail_fold = """Users\{0}\mails_inbox.json""".format(str(js['login']))
-        s_ids = []
-        result = {'mails': []}
-        try:
-            with open(mail_fold) as f:
-                jj = json.load(f)
-                mm = jj["mails"]
-                for i in mm:
-                    s_ids.append(i)
-            for id_mail in s_ids:
-                mail = """Mails\{0}""".format(id_mail)
-                with open(mail) as f:
-                    jj = json.load(f)
-                    obj_mail = {'from': jj['from'], 'header': jj['header'], 'id': jj['id']}
-                    result['mails'].append(obj_mail)
-        except:
-            pass
+
+        result = get_header_mail(mail_fold)
+
         result = LocalJSON.addCommand(result, "INBOX")
         return result
     except:
         raise Exception("GETINBOX with: " + json.dumps(js))
 
 
-def createDefUserInfoJSON(dir, js):
-    try:
-        with open(dir):
-            pass
-    except:
-        e = open(dir, 'w')
-        e.close()
+def create_default_user_info_json(dir, js):
+    open(dir, 'w').close()
     with open(dir) as f:
         if len(f.readline()) > 1:
             return
@@ -126,7 +103,7 @@ def add_to_users_list(dir, js):
     add_item_json(dir, 'users', json.dumps(js))
 
 
-def registerUser(js):
+def registration_user(js):
     try:
         # login psw name
         if not (os.path.exists('Users/' + js["login"])):
@@ -136,9 +113,9 @@ def registerUser(js):
         user_folder_userInfo = """Users\{0}\user_info.json""".format(js["login"])
         users_list_dir = "Users\users.json"
 
-        createDefJSON(user_fold_sent)
-        createDefJSON(user_fold_inbox)
-        createDefUserInfoJSON(user_folder_userInfo, js)
+        create_default_JSON(user_fold_sent)
+        create_default_JSON(user_fold_inbox)
+        create_default_user_info_json(user_folder_userInfo, js)
         add_to_users_list(users_list_dir, js)
     except:
         raise Exception("error with arg: " + json.dumps(js))
@@ -154,7 +131,7 @@ def verification(line):
     return False
 
 
-def getMail(js):
+def get_mail(js):
     try:
         dir = """Mails\{0}""".format(js["idMail"])
         with open(dir) as f:
@@ -164,13 +141,13 @@ def getMail(js):
         raise Exception('bad GETMAIL command with JSON: ' + json.dumps(js))
 
 
-def getRecivers(idMail):
-    m = getMail(idMail)
+def get_recivers(id_mail):
+    m = get_mail(id_mail)
     j = json.loads(m)
     return j['recivers']
 
 
-def delMessage(js):
+def delete_message(js):
     try:
         def delete(dir, id_mail):
             with open(dir, 'r') as json_file:
@@ -183,7 +160,7 @@ def delMessage(js):
         id_mail = js['idMail']
         login = js['login']
         users = set()
-        for item in getRecivers(id_mail):
+        for item in get_recivers(id_mail):
             users.add(item)
         users.add(login)
         for to in users:
@@ -195,7 +172,7 @@ def delMessage(js):
 
 
 def mail_to_send(js):
-    mail = getMail(js)
+    mail = get_mail(js)
     m = hashlib.md5()
     m.update(mail)
     print m.hexdigest()
@@ -228,26 +205,26 @@ class Server(LineOnlyReceiver):
         print "in:", json.dumps(js)
         command = js['command']
         if command == 'REGISTRATION':
-            registerUser(js)
+            registration_user(js)
 
         if command == 'VERIFICATION':
             # TODO login verification
             pass
 
         if command == 'GETSENT':
-            self.sendLine(getMailsSentID(js))
+            self.sendLine(get_mails_sent_id(js))
 
         if command == 'GETINBOX':
-            self.sendLine(getMailsInboxID(js))
+            self.sendLine(get_mails_inbox_id(js))
 
         if command == 'GETMESSAGE':
             self.sendLine(mail_to_send(js))
 
         if command == 'DELMESSAGE':
-            self.sendLine(delMessage(js))
+            self.sendLine(delete_message(js))
 
         if command == 'SETMESSAGE':
-            self.sendLine(dumpJsons(js))
+            self.sendLine(dump_jsons(js))
 
     def sendLine(self, line):
         self.transport.write(line + "\r\n")
