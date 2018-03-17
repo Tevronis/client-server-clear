@@ -1,10 +1,15 @@
 import json
 
 
-def createJSON(js, command):
-    js['command'] = command
-    return json.dumps(js)
+class clll:
+    AB = clll.fun
+    @staticmethod
+    def fun():
+        print 'qwe'
 
-ss = {"hi": 123}
-j = createJSON(ss, 'jopa')
-print(j)
+    def foo(self):
+        clll.AB()
+
+c = clll()
+
+print c.foo()

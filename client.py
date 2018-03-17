@@ -7,6 +7,7 @@ from twisted.internet.protocol import ClientFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
 import mail
+import ui.listbox
 from mail import Mail
 from group import Group
 import hashlib
@@ -18,9 +19,11 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
+
+
 def setText(message):
-    listbox.insert(END, message + '\n')
-    text.set('')
+    text = 'FROM: ' + message['from'] + ' Title: ' + message['header']
+    listbox.addElement(text, message)
 
 
 LAST_HASH = ''
@@ -41,17 +44,17 @@ class Client(LineOnlyReceiver):
         js = json.loads(data)
         command = js['command']
         if command == 'SENT':
-            listbox.delete(0, listbox.size())
+            listbox.clear()
             for item in js['mails']:
-                setText('id: ' + str(item['id']) + ' FROM: ' + item['from'] + ' Title: ' + item['header'])
+                setText(item)
         if command == 'INBOX':
-            listbox.delete(0, listbox.size())
+            listbox.clear()
             for item in js['mails']:
-                setText('id: ' + str(item['id']) + ' FROM: ' + item['from'] + ' Title: ' + item['header'])
+                setText(item)
         if command == 'GINBOX':
-            listbox.delete(0, listbox.size())
+            listbox.clear()
             for item in js['mails']:
-                setText('id: ' + str(item['id']) + ' FROM: ' + item['from'] + ' Title: ' + item['header'])
+                setText(item)
         if command == 'MESSAGE':
             LAST_HASH = js['HASH']
             print LAST_HASH
@@ -111,14 +114,14 @@ class Client(LineOnlyReceiver):
             self.sendData(toSent)
 
         def getMessage(event):
-            pat = r'id: ([0-9]+)'
-            id = re.search(pat, listbox.get(listbox.curselection()))
-            js = {"idMail": str(id.group(1))}
+            mail_object = listbox.getCurrent()
+            js = {"idMail": mail_object['id']}
             toSent = LocalJSON.addCommand(js, 'GETMESSAGE')
             self.sendData(toSent)
 
         def delMessage(event):
-            js = {"login": clientUser.login, "idMail": listbox.get(listbox.curselection())}
+            mail_object = listbox.getCurrent()
+            js = {"login": clientUser.login, "idMail": mail_object['id']}
             toSent = LocalJSON.addCommand(js, 'DELMESSAGE')
             self.sendData(toSent)
 
@@ -150,38 +153,34 @@ root.mainloop()
 # exit()
 
 tk = Tk()
-panelFrame = Frame(tk, height=60, bg='gray')
-logFrame = Frame(tk, height=340, width=600)
-bottomFrame = Frame(tk, height=60, bg='gray')
+panelFrame = Frame(tk, height=40, bg='gray')
+logFrame = Frame(tk, height=340, width=400)
 
 panelFrame.pack(side='top', fill='x')
 logFrame.pack(side='bottom', fill='both', expand=1)
-bottomFrame.pack(side='bottom', fill='both', expand=1)
 # Buttons:
 inBoxButton = Button(panelFrame, text='Inbox')
 sentButton = Button(panelFrame, text='Sent')
 toWriteButton = Button(panelFrame, text='Write')
 
-delMessageButton = Button(bottomFrame, text='delete msg')
-readMessageButton = Button(bottomFrame, text='read msg')
+delMessageButton = Button(panelFrame, text='delete msg')
+readMessageButton = Button(panelFrame, text='read msg')
 
 tk.title('Client ' + clientUser.login)
-tk.geometry('500x500')
+tk.geometry('400x200')
 
-text = StringVar()
-text.set('')
-
-listbox = Listbox(logFrame)
-listbox.pack(fill='x', expand='true')
-listbox.insert(END, "a list entry")
+#listbox = Listbox(logFrame)
+listbox = ui.listbox.Listboxc(logFrame)
+#listbox.pack(fill='x', expand='true')
+#listbox.insert(END, "a list entry")
 
 # Grid
 
 inBoxButton.grid(row=1, column=1)
 sentButton.grid(row=1, column=2)
 toWriteButton.grid(row=1, column=3)
-delMessageButton.grid(row=1, column=2)
-readMessageButton.grid(row=1, column=3)
+delMessageButton.grid(row=1, column=4)
+readMessageButton.grid(row=1, column=5)
 
 factory = Twist_Factory()
 reactor.connectTCP("localhost", 12345, factory)
