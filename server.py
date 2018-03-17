@@ -30,7 +30,7 @@ class Server(LineOnlyReceiver):
         js = json.loads(line)
         print "in:", json.dumps(js)
         command = js['command']
-
+        # TODO {'command': cmd, 'data': data}
         #if command in FUNCTIONAL.keys() and False:
         #    self.server_handler(FUNCTIONAL[command], js)
         #else:

@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import hashlib
 import json
 
 from tkinter import *
@@ -8,11 +9,8 @@ from twisted.protocols.basic import LineOnlyReceiver
 
 import mail
 import ui.listbox
+from clientUI import ClientUI
 from mail import Mail
-from group import Group
-import hashlib
-from user import ClientUser
-from clientUI import ClientUI, readMessage
 from utils import comands, clientUser, LocalJSON
 
 reload(sys)
@@ -65,7 +63,7 @@ class Client(LineOnlyReceiver):
             if m.hexdigest() != LAST_HASH:
                 print 'BAD HASH'
             j = json.loads(js['MESSAGE'])
-            readMessage(Mail.mailPrint(j))
+            ClientUI.readMessage(j)
         if command == 'PRINT':
             print js['data']
         print data

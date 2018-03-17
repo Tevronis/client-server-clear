@@ -1,8 +1,6 @@
 import json
 from Tkinter import *
 
-from twisted.internet import tksupport, reactor
-
 from utils import clientUser, comands
 
 
@@ -15,7 +13,6 @@ class ClientUI(Frame):
         self.initUI(parent)
 
     def initUI(self, root):
-        #root = Tk()
         root.geometry('300x100')
         root.title('Login or Registration')
 
@@ -66,15 +63,27 @@ class ClientUI(Frame):
         login.focus_set()
         root.mainloop()
 
-def readMessage(msg):
-    top = Toplevel()
-    top.title("Message")
+    @staticmethod
+    def readMessage(js):
+        frame = Toplevel()
+        frame.geometry('300x200+300+200')
+        frame.resizable(False, False)
 
-    msg = Message(top, text=msg)
-    msg.pack()
+        topFrame = Frame(frame, height=60, bg='gray')
+        botFrame = Frame(frame, height=140, width=200)
+        topFrame.pack(side='top', fill='x')
+        botFrame.pack(side='bottom', fill='both', expand=1)
+        frame.title("Message")
 
-    button = Button(top, text="Dismiss", command=top.destroy)
-    button.pack()
+        text = 'FROM: ' + js['from'] + '\nHEADER: ' + js['header'] + '\nDATE: ' + js['date'] + '\nTO: ' + ' '.join(js['recivers'])
+        tp = Message(topFrame, text=text, bg='gray')
+        tp.pack()
+        text = js['data']
+        bt = Message(botFrame, text=text)
+        bt.pack()
+
+        button = Button(botFrame, text="Dismiss", command=frame.destroy)
+        button.pack()
 
 
 
