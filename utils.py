@@ -1,10 +1,6 @@
 import json
 
-from user import ClientUser
-
 comands = []
-
-clientUser = ClientUser()
 
 
 class LocalJSON:

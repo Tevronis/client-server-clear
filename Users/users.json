@@ -1,1 +1,1 @@
-{"users": [["mike", "123", "Mishail"], ["mike", "123", "Misha"], ["raashi", "1234", "Ivan"], ["nastya", "123", "NASTYA"], ["mike", "123", "misha"]]}
+{"users": [["mike", "123", "Mishail"], ["mike", "123", "Misha"], ["raashi", "1234", "Ivan"], ["nastya", "123", "NASTYA"], ["mike", "123", "misha"], "{\"login\": \"test\", \"password\": \"321\", \"command\": \"REGISTRATION\", \"name\": \"Test\"}"]}

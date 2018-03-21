@@ -11,7 +11,8 @@ import mail
 import ui.listbox
 from clientUI import ClientUI
 from mail import Mail
-from utils import comands, clientUser, LocalJSON
+from user import User
+from utils import comands, LocalJSON
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -66,6 +67,17 @@ class Client(LineOnlyReceiver):
             ClientUI.readMessage(j)
         if command == 'PRINT':
             print js['data']
+        if command == 'USER':
+            if js['status'] == "OK":
+                currentUser.setParams(js)
+                tk.title('Client ' + currentUser.login)
+            else:
+                # TODO repeat log pass
+                raise Exception("Неверный логин или пароль")
+        if command == "REGISTRATION":
+            # TODO save s_key local
+            s_key, o_key = currentUser.generateRsaKeys()
+            self.sendData(json.dumps({"command": "SETOPENKEY", "open_key": o_key, "login": currentUser.login}))
         print data
 
     def connectionMade(self):
@@ -78,7 +90,7 @@ class Client(LineOnlyReceiver):
 
         def sendMAIL(event):
             def send(event):
-                js = {'id': mail.nextId(), 'from': clientUser.login, 'header': title.get(),
+                js = {'id': mail.nextId(), 'from': currentUser.login, 'header': title.get(),
                       'recivers': to.get().split(),
                       'data': msg.get("1.0", END), 'date': ''}
                 toSent = LocalJSON.addCommand(js, 'SETMESSAGE')
@@ -102,12 +114,12 @@ class Client(LineOnlyReceiver):
             button.bind("<Button-1>", send)
 
         def getSentJSON(event):
-            js = {"login": clientUser.login}
+            js = {"login": currentUser.login}
             toSent = LocalJSON.addCommand(js, 'GETSENT')
             self.sendData(toSent)
 
         def getInboxJSON(event):
-            js = {"login": clientUser.login}
+            js = {"login": currentUser.login}
             toSent = LocalJSON.addCommand(js, 'GETINBOX')
             self.sendData(toSent)
 
@@ -119,7 +131,7 @@ class Client(LineOnlyReceiver):
 
         def delMessage(event):
             mail_object = listbox.getCurrent()
-            js = {"login": clientUser.login, "idMail": mail_object['id']}
+            js = {"login": currentUser.login, "idMail": mail_object['id']}
             toSent = LocalJSON.addCommand(js, 'DELMESSAGE')
             self.sendData(toSent)
 
@@ -143,12 +155,9 @@ class Twist_Factory(ClientFactory):
 
 
 root = Tk()
-
+currentUser = User()
 UI = ClientUI(root)
 root.mainloop()
-
-# UI.runLogin()
-# exit()
 
 tk = Tk()
 panelFrame = Frame(tk, height=40, bg='gray')
@@ -164,13 +173,11 @@ toWriteButton = Button(panelFrame, text='Write')
 delMessageButton = Button(panelFrame, text='delete msg')
 readMessageButton = Button(panelFrame, text='read msg')
 
-tk.title('Client ' + clientUser.login)
+# del this
+tk.title('Client ' + currentUser.login)
 tk.geometry('400x200')
 
-#listbox = Listbox(logFrame)
-listbox = ui.listbox.Listboxc(logFrame)
-#listbox.pack(fill='x', expand='true')
-#listbox.insert(END, "a list entry")
+listbox = ui.listbox.CS_Listbox(logFrame)
 
 # Grid
 

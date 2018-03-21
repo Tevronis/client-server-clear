@@ -6,7 +6,7 @@ from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
 from utils import LocalJSON
-from server_utils import *
+from server_utils import merge_two_dicts
 
 
 class Server(LineOnlyReceiver):
@@ -30,11 +30,7 @@ class Server(LineOnlyReceiver):
         js = json.loads(line)
         print "in:", json.dumps(js)
         command = js['command']
-        # TODO {'command': cmd, 'data': data}
-        #if command in FUNCTIONAL.keys() and False:
-        #    self.server_handler(FUNCTIONAL[command], js)
-        #else:
-        #    print "unresolved command"
+        # TODO {'command': cmd, 'data': {data}}
 
         if command == 'REGISTRATION':
             self.user_registration(js)
@@ -57,6 +53,9 @@ class Server(LineOnlyReceiver):
         if command == 'SETMESSAGE':
             self.sendLine(self.dump_jsons(js))
 
+        if command == 'SETOPENKEY':
+            self.sendLine((self.set_open_key(js)))
+
     def server_handler(self, fun, js):
         self.sendLine(fun(js))
 
@@ -78,6 +77,14 @@ class Server(LineOnlyReceiver):
         with open(dir, 'r') as json_file:
             jsn = json.load(json_file)
             jsn[field].append(item)
+        with open(dir, 'w') as json_file:
+            json.dump(jsn, json_file)
+
+    @staticmethod
+    def set_item_json(dir, field, item):
+        with open(dir, 'r') as json_file:
+            jsn = json.load(json_file)
+            jsn[field] = item
         with open(dir, 'w') as json_file:
             json.dump(jsn, json_file)
 
@@ -161,7 +168,7 @@ class Server(LineOnlyReceiver):
     @staticmethod
     def user_registration(js):
         try:
-            # login psw name
+            result = {"command": "REGISTRATION"}
             if not (os.path.exists('Users/' + js["login"])):
                 os.mkdir("""Users\{0}""".format(js["login"]))
             user_fold_sent = """Users\{0}\mails_sent.json""".format(js["login"])
@@ -173,19 +180,27 @@ class Server(LineOnlyReceiver):
             Server.create_default_json(user_fold_inbox)
             Server.create_default_user_info_json(user_folder_user_info, js)
             Server.add_to_users_list(users_list_dir, js)
+            return json.dumps(result)
         except:
             raise Exception("error with arg: " + json.dumps(js))
 
     @staticmethod
     def verification(js):
-        return json.dumps({'command': 'None'})
-        # dir = "Users\users.json"
-        # with open(dir) as f:
-        #     j = json.load(f)
-        #     if not j[line] is None:
-        #         f.close()
-        #       return True
-        # return False
+        # in: json {login, password}
+        # out: json {command, status, user param..}
+        result = {"command": "USER"}
+        if not (os.path.exists('Users/' + js["login"])):
+            result["status"] = "BAD"
+            return json.dumps(result)
+        user_info = """Users\{0}\user_info.json""".format(js["login"])
+        with open(user_info) as f:
+            jsf = json.load(f)
+            if js["password"] != jsf["password"]:
+                result["status"] = "BAD"
+            else:
+                result = merge_two_dicts(result, jsf)
+                result["status"] = "OK"
+        return json.dumps(result)
 
     @staticmethod
     def get_mail(js):
@@ -235,6 +250,11 @@ class Server(LineOnlyReceiver):
         print m.hexdigest()
         j_obj = {'HASH': str(m.hexdigest()), 'MESSAGE': mail}
         return LocalJSON.addCommand(j_obj, 'MESSAGE')
+
+    @staticmethod
+    def set_open_key(js):
+        user_info = """Users\{0}\user_info.json""".format(js["login"])
+        Server.set_item_json(user_info, 'open_key', js['open_key'])
 
 
 class ChatProtocolFactory(ServerFactory):

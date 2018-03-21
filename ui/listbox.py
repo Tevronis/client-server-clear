@@ -1,7 +1,7 @@
 import tkinter
 
 
-class Listboxc:
+class CS_Listbox:
     class ListboxObject:
         def __init__(self, pos, text, obj):
             self.pos = pos
@@ -21,7 +21,7 @@ class Listboxc:
     def addElement(self, text, obj, idx=None):
         if idx is None:
             idx = self.getLast()
-        item = Listboxc.ListboxObject(idx, text, obj)
+        item = CS_Listbox.ListboxObject(idx, text, obj)
         self.objects[idx] = item
         self.listbox.insert(idx, item.text)
 

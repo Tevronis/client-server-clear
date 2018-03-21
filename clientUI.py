@@ -1,7 +1,7 @@
 import json
 from Tkinter import *
 
-from utils import clientUser, comands
+from utils import comands
 
 
 class ClientUI(Frame):
@@ -27,12 +27,8 @@ class ClientUI(Frame):
         reg.grid(row=2, column=1)
 
         def acceptExit(event):
-            # check log/pass
             cmd = {"command": "VERIFICATION", "login": login.get(), "password": password.get()}
             comands.append(json.dumps(cmd))
-            clientUser.login = login.get()
-            clientUser.password = password.get()
-            # clientUser.user = .get()
             root.destroy()
 
         def registrationCB(event):
@@ -49,7 +45,7 @@ class ClientUI(Frame):
             passwordR.grid(row=2, column=1)
             name.grid(row=0, column=1)
             def acceptReg(event):
-                cmd = {"command": "REGISTRATION", "login": login.get(), "password": password.get(), "name": name.get()}
+                cmd = {"command": "REGISTRATION", "login": loginR.get(), "password": passwordR.get(), "name": name.get()}
                 comands.append(json.dumps(cmd))
                 reg.destroy()
             passwordR.bind('<Return>', acceptReg)
