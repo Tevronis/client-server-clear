@@ -1,11 +1,12 @@
 import hashlib
 import json
 import os
+
 from twisted.internet import reactor
 from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
-from utils import LocalJSON
+from client.utils import LocalJSON
 from server_utils import merge_two_dicts
 
 
@@ -54,7 +55,10 @@ class Server(LineOnlyReceiver):
             self.sendLine(self.dump_jsons(js))
 
         if command == 'SETOPENKEY':
-            self.sendLine((self.set_open_key(js)))
+            self.sendLine(self.set_open_key(js))
+
+        if command == 'GETOPENKEY':
+            self.sendLine(self.get_user_open_key(js))
 
     def server_handler(self, fun, js):
         self.sendLine(fun(js))
@@ -255,6 +259,16 @@ class Server(LineOnlyReceiver):
     def set_open_key(js):
         user_info = """Users\{0}\user_info.json""".format(js["login"])
         Server.set_item_json(user_info, 'open_key', js['open_key'])
+        return json.dumps({"status": "OK"})
+
+    @staticmethod
+    def get_user_open_key(js):
+        user_info = """Users\{0}\user_info.json""".format(js["login"])
+        with open(user_info) as file:
+            j = json.load(file)
+            result = {"command": "OPENKEY", "login": js["login"], "open_key": j["open_key"]}
+        return json.dumps(result)
+
 
 
 class ChatProtocolFactory(ServerFactory):

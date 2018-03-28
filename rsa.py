@@ -1,56 +1,10 @@
 # coding=utf-8
 import random
 from fractions import gcd
+import sympy
 
-def yakobi(a, b):
-    if gcd(a, b) != 1:
-        return 0
-    r = 1
-
-    if a < 0:
-        a = -a
-        if b % 4 == 3:
-            r = -r
-
-    def stuff(a, b, r):
-        t = 0
-        while a % 2 == 0:
-            t += 1
-            a /= 2
-        if t % 2 == 1:
-            if (b % 8) == 3 or (b % 8) == 5:
-                r = -r
-
-        if (a % 4) == (b % 4) == 3:
-            r = -r
-        c = a
-        a = b % c
-        b = c
-        return a, b, r
-
-    a, b, r = stuff(a, b, r)
-    while a != 0:
-        a, b, r = stuff(a, b, r)
-
-    return r
-
-def isPrime(num):
-
-    for k in range(1, 5):
-        a = random.randrange(1, num)
-        if not gcd(a, num) > 1:
-            b = a ** ((num - 1) / 2)
-            r = yakobi(a, num)
-            if (b - r) % num != 0:
-                break
-        else:
-            break
-    else:
-        return True
-    return False
 
 class RSA:
-
     ALPH = """abcdefghijklmnopqrstuvwxyz .,!@#$%^&*()_-=+"'?><`~ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:;[]{}"""
 
     def __init__(self, length):
@@ -74,8 +28,8 @@ class RSA:
     def __decrypt_symbol(c, secret_key):
         return pow(c, secret_key[0], secret_key[1])
 
-    #@staticmethod
     def encrypt(self, text, open_key):
+        print "encrypt"
         result = []
         block = ""
         for symbol in text:
@@ -91,37 +45,42 @@ class RSA:
 
         return ':'.join(map(str, result))
 
-    #@staticmethod
     def decrypt(self, crypt, secret_key):
+        print "decrypt"
         crypt = crypt.split(":")
         result = ""
         for block in crypt:
             item = RSA.__decrypt_symbol(int(block), secret_key)
             for c in range(0, len(str(item)), 3):
-                result += self.table_rev[int(str(item)[c:c+3])]
+                result += self.table_rev[int(str(item)[c:c + 3])]
         return result
 
     def __generatePrime(self, length):
-        result = []
-        for item in range(2**(length-1), 2**length):
-            if isPrime(item):
-                result.append(item)
-            if len(result) == 2:
-                break
-        return result[0], result[1]
+        print "generate q, p"
+        a = sympy.randprime(2 ** (length - 1), 2 ** length)
+        b = sympy.randprime(2 ** (length - 1), 2 ** length)
+        return a, b
 
     def __generateE(self):
+        print "generate e"
         # 17 257 65537
-        return 3
+        result = 3
+        for num in sympy.primerange(2, self.f):
+            if gcd(num, self.f) == 1:
+                result = num
+                break
+        return result
 
     def __generateD(self):
+        print "generate d with f: {0} e: {1}".format(self.f, self.e)
         # (d * e - 1) % f == 0
         d = 2
-        while (d * self.e - 1) % self.f != 0:
+        while (d * self.e) % self.f != 1:
             d += 1
-        return d # 6111579
+        return d  # 6111579
 
     def generate_table(self):
+        print "generate table"
         for symbol in RSA.ALPH:
             value = ord(symbol)
             if ord(symbol) < 100:
@@ -129,10 +88,11 @@ class RSA:
             self.table[symbol] = value
             self.table_rev[value] = symbol
 
-rsa = RSA(3)
+
+rsa = RSA(10)
 
 alisa_ok, alisa_sk = rsa.getKeys()
-
+print alisa_ok, alisa_sk
 text = "nastia_prekrasnaya_divochka<3"
 print text
 

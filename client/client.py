@@ -8,16 +8,12 @@ from twisted.internet.protocol import ClientFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
 import mail
-import ui.listbox
 from clientUI import ClientUI
-from mail import Mail
 from user import User
 from utils import comands, LocalJSON
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
-
 
 
 def setText(message):
@@ -78,6 +74,8 @@ class Client(LineOnlyReceiver):
             # TODO save s_key local
             s_key, o_key = currentUser.generateRsaKeys()
             self.sendData(json.dumps({"command": "SETOPENKEY", "open_key": o_key, "login": currentUser.login}))
+        if command == 'OPENKEY':
+            pass
         print data
 
     def connectionMade(self):
@@ -177,7 +175,7 @@ readMessageButton = Button(panelFrame, text='read msg')
 tk.title('Client ' + currentUser.login)
 tk.geometry('400x200')
 
-listbox = ui.listbox.CS_Listbox(logFrame)
+listbox = client.ui.listbox.CS_Listbox(logFrame)
 
 # Grid
 
