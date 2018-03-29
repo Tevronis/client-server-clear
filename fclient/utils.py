@@ -1,5 +1,8 @@
 import json
 
+from fclient.user import User
+
+currentUser = User()
 comands = []
 
 

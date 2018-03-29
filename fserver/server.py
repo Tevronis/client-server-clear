@@ -6,7 +6,8 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
-from client.utils import LocalJSON
+from fclient.utils import LocalJSON
+from fserver import mail
 from server_utils import merge_two_dicts
 
 
@@ -103,6 +104,7 @@ class Server(LineOnlyReceiver):
     @staticmethod
     def dump_jsons(js):
         try:
+            js['id'] = mail.nextId()
             if not (os.path.exists('Users/' + js['from'])):
                 os.mkdir("""Users\{0}""".format(js['from']))
             mail_fold = """Mails\{0}""".format(str(js['id']))
@@ -162,7 +164,7 @@ class Server(LineOnlyReceiver):
             if len(f.readline()) > 1:
                 return
         with open(dir, 'w') as f:
-            todump = {"login": js["login"], "password": js["password"], "name": js["name"]}
+            todump = {"login": js["login"], "password": js["password"], "name": js["name"], "open_key": js["open_key"]}
             f.write(json.dumps(todump))
 
     @staticmethod

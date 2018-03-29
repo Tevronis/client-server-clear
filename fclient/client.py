@@ -7,10 +7,10 @@ from twisted.internet import reactor, tksupport
 from twisted.internet.protocol import ClientFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
-import mail
-from clientUI import ClientUI
-from user import User
-from utils import comands, LocalJSON
+from fclient.ui.clientUI import ClientUI
+from fclient.ui.listbox import CS_Listbox
+from fclient.user import User
+from fclient.utils import comands, LocalJSON, currentUser
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -88,7 +88,9 @@ class Client(LineOnlyReceiver):
 
         def sendMAIL(event):
             def send(event):
-                js = {'id': mail.nextId(), 'from': currentUser.login, 'header': title.get(),
+                # TODO
+                #o_key = getOpenKey(to.get())
+                js = {'from': currentUser.login, 'header': title.get(),
                       'recivers': to.get().split(),
                       'data': msg.get("1.0", END), 'date': ''}
                 toSent = LocalJSON.addCommand(js, 'SETMESSAGE')
@@ -98,7 +100,7 @@ class Client(LineOnlyReceiver):
             top = Toplevel()
             top.title("Message")
 
-            button = Button(top, text="Dismiss")
+            button = Button(top, text="Dismiss", width=10, bd=5)
             msg = Text(top)
             to = Entry(top)
             title = Entry(top)
@@ -153,7 +155,6 @@ class Twist_Factory(ClientFactory):
 
 
 root = Tk()
-currentUser = User()
 UI = ClientUI(root)
 root.mainloop()
 
@@ -164,18 +165,18 @@ logFrame = Frame(tk, height=340, width=400)
 panelFrame.pack(side='top', fill='x')
 logFrame.pack(side='bottom', fill='both', expand=1)
 # Buttons:
-inBoxButton = Button(panelFrame, text='Inbox')
-sentButton = Button(panelFrame, text='Sent')
-toWriteButton = Button(panelFrame, text='Write')
+inBoxButton = Button(panelFrame, text='Inbox', width=10, bd=5)
+sentButton = Button(panelFrame, text='Sent', width=10, bd=5)
+toWriteButton = Button(panelFrame, text='Write', width=10, bd=5)
 
-delMessageButton = Button(panelFrame, text='delete msg')
-readMessageButton = Button(panelFrame, text='read msg')
+delMessageButton = Button(panelFrame, text='delete msg', width=10, bd=5)
+readMessageButton = Button(panelFrame, text='read msg', width=10, bd=5)
 
 # del this
 tk.title('Client ' + currentUser.login)
-tk.geometry('400x200')
+tk.geometry('430x200')
 
-listbox = client.ui.listbox.CS_Listbox(logFrame)
+listbox = CS_Listbox(logFrame)
 
 # Grid
 

@@ -3,18 +3,25 @@ import random
 from fractions import gcd
 import sympy
 
+ALPH = """abcdefghijklmnopqrstuvwxyz .,!@#$%^&*()_-=+"'?><`~ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:;[]{}"""
+table = dict()
+table_rev = dict()
+for symbol in ALPH:
+    value = ord(symbol)
+    if ord(symbol) < 100:
+        value += 800
+    table[symbol] = value
+    table_rev[value] = symbol
+
 
 class RSA:
-    ALPH = """abcdefghijklmnopqrstuvwxyz .,!@#$%^&*()_-=+"'?><`~ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:;[]{}"""
-
     def __init__(self, length):
         self.p, self.q = self.__generatePrime(length)
         self.n = self.p * self.q
         self.f = (self.p - 1) * (self.q - 1)
         self.e = self.__generateE()
         self.d = self.__generateD()
-        self.table = dict()
-        self.table_rev = dict()
+
         self.generate_table()
 
     def getKeys(self):
@@ -28,31 +35,33 @@ class RSA:
     def __decrypt_symbol(c, secret_key):
         return pow(c, secret_key[0], secret_key[1])
 
-    def encrypt(self, text, open_key):
+    @staticmethod
+    def encrypt(text, open_key):
         print "encrypt"
         result = []
         block = ""
         for symbol in text:
-            if int(block + str(self.table[symbol])) < self.n:
-                block += str(self.table[symbol])
+            if int(block + str(table[symbol])) < open_key[1]:
+                block += str(table[symbol])
             else:
                 item = RSA.__encrypt_symbol(int(block), open_key)
                 result.append(item)
-                block = str(self.table[symbol])
+                block = str(table[symbol])
         else:
             item = RSA.__encrypt_symbol(int(block), open_key)
             result.append(item)
 
         return ':'.join(map(str, result))
 
-    def decrypt(self, crypt, secret_key):
+    @staticmethod
+    def decrypt(crypt, secret_key):
         print "decrypt"
         crypt = crypt.split(":")
         result = ""
         for block in crypt:
             item = RSA.__decrypt_symbol(int(block), secret_key)
             for c in range(0, len(str(item)), 3):
-                result += self.table_rev[int(str(item)[c:c + 3])]
+                result += table_rev[int(str(item)[c:c + 3])]
         return result
 
     def __generatePrime(self, length):
@@ -81,23 +90,16 @@ class RSA:
 
     def generate_table(self):
         print "generate table"
-        for symbol in RSA.ALPH:
-            value = ord(symbol)
-            if ord(symbol) < 100:
-                value += 800
-            self.table[symbol] = value
-            self.table_rev[value] = symbol
 
+# rsa = RSA(10)
 
-rsa = RSA(10)
+# alisa_ok, alisa_sk = rsa.getKeys()
+# print alisa_ok, alisa_sk
+# text = "nastia_prekrasnaya_divochka<3"
+# print text
 
-alisa_ok, alisa_sk = rsa.getKeys()
-print alisa_ok, alisa_sk
-text = "nastia_prekrasnaya_divochka<3"
-print text
+# encr = rsa.encrypt(text, alisa_ok)
+# print encr
 
-encr = rsa.encrypt(text, alisa_ok)
-print encr
-
-decr = rsa.decrypt(encr, alisa_sk)
-print decr
+# decr = rsa.decrypt(encr, alisa_sk)
+# print decr

@@ -1,8 +1,12 @@
+# coding=utf-8
+import functools
 import json
 from Tkinter import *
 
-from utils import comands
+from fclient.utils import comands, currentUser
+from rsa import RSA
 
+# from fclient.utils import *
 
 class ClientUI(Frame):
     def __init__(self, parent):
@@ -19,7 +23,7 @@ class ClientUI(Frame):
         Label(root, text='Login: ').grid(row=0)
         Label(root, text='Password: ').grid(row=1)
 
-        reg = Button(root, text='Registration')
+        reg = Button(root, text='Registration', width=10, bd=5)
         login = Entry(root)
         password = Entry(root)
         login.grid(row=0, column=1)
@@ -44,10 +48,18 @@ class ClientUI(Frame):
             loginR.grid(row=1, column=1)
             passwordR.grid(row=2, column=1)
             name.grid(row=0, column=1)
+
             def acceptReg(event):
-                cmd = {"command": "REGISTRATION", "login": loginR.get(), "password": passwordR.get(), "name": name.get()}
+                o_key, s_key = RSA(12).getKeys()
+                cmd = {"command": "REGISTRATION", "login": loginR.get(), "password": passwordR.get(),
+                       "name": name.get(), "open_key": o_key}
+                print o_key
+                print s_key
+                with open(loginR.get() + '.dat', 'w') as file:
+                    json.dump({"s_key": s_key}, file)
                 comands.append(json.dumps(cmd))
                 reg.destroy()
+
             passwordR.bind('<Return>', acceptReg)
             loginR.focus_set()
             reg.mainloop()
@@ -71,15 +83,21 @@ class ClientUI(Frame):
         botFrame.pack(side='bottom', fill='both', expand=1)
         frame.title("Message")
 
-        text = 'FROM: ' + js['from'] + '\nHEADER: ' + js['header'] + '\nDATE: ' + js['date'] + '\nTO: ' + ' '.join(js['recivers'])
-        tp = Message(topFrame, text=text, bg='gray')
+        textt = StringVar(topFrame, 'FROM: ' + js['from'] + '\nHEADER: ' + js['header'] + '\nDATE: ' + js['date'] + '\nTO: ' + ' '.join(js['recivers']))
+        tp = Message(topFrame, textvariable=textt, bg='gray')
         tp.pack()
-        text = js['data']
-        bt = Message(botFrame, text=text)
+
+        textb = StringVar(botFrame, js['data'])
+        bt = Message(botFrame, textvariable=textb)
         bt.pack()
 
-        button = Button(botFrame, text="Dismiss", command=frame.destroy)
-        button.pack()
+        def decrypt(event, param):
+            sk = currentUser.secret_key
+            param.set(RSA.decrypt(param.get(), sk))
 
+        dismissBtn = Button(botFrame, text="Dismiss", command=frame.destroy, width=10, bd=5)
+        decryptBtn = Button(botFrame, text="decrypt", width=10, bd=5)
 
-
+        decryptBtn.bind("<Button-1>", functools.partial(decrypt, param=textb))
+        dismissBtn.pack()
+        decryptBtn.pack()
