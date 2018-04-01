@@ -35,7 +35,7 @@ class Server(LineOnlyReceiver):
         # TODO {'command': cmd, 'data': {data}}
 
         if command == 'REGISTRATION':
-            self.user_registration(js)
+            self.sendLine(self.user_registration(js))
 
         if command == 'VERIFICATION':
             self.sendLine(self.verification(js))
@@ -65,7 +65,7 @@ class Server(LineOnlyReceiver):
         self.sendLine(fun(js))
 
     def sendLine(self, line):
-        self.transport.write(line + "\r\n")
+        self.transport.write(line)
 
     @staticmethod
     def create_default_json(dir):
@@ -97,27 +97,27 @@ class Server(LineOnlyReceiver):
     def set_inbox(js):
         if not (os.path.exists('Users/' + js['from'])):
             os.mkdir("""Users\{0}""".format(js['from']))
-        for to in js['recivers']:
-            dir = """Users\{0}\mails_inbox.json""".format(to)
-            Server.add_item_json(dir, 'mails', str(js['id']))
+        to = js['recivers']
+        dir = """Users\{0}\mails_inbox.json""".format(to)
+        Server.add_item_json(dir, 'mails', str(js['id']))
 
     @staticmethod
     def dump_jsons(js):
-        try:
-            js['id'] = mail.nextId()
-            if not (os.path.exists('Users/' + js['from'])):
-                os.mkdir("""Users\{0}""".format(js['from']))
-            mail_fold = """Mails\{0}""".format(str(js['id']))
-            user_fold_sent = """Users\{0}\mails_sent.json""".format(js['from'])
+        #try:
+        js['id'] = mail.nextId()
+        if not (os.path.exists('Users/' + js['from'])):
+            os.mkdir("""Users\{0}""".format(js['from']))
+        mail_fold = """Mails\{0}""".format(str(js['id']))
+        user_fold_sent = """Users\{0}\mails_sent.json""".format(js['from'])
 
-            Server.create_default_json(user_fold_sent)
-            Server.set_inbox(js)
-            Server.add_item_json(user_fold_sent, 'mails', str(js['id']))
-            with open(mail_fold, 'w') as f:
-                f.write(json.dumps(js))
-            return json.dumps({'command': 'PRINT', 'data': 'OK'})
-        except:
-            raise Exception("message not JSON!: " + json.dumps(js))
+        # Server.create_default_json(user_fold_sent)
+        Server.set_inbox(js)
+        Server.add_item_json(user_fold_sent, 'mails', str(js['id']))
+        with open(mail_fold, 'w') as f:
+            f.write(json.dumps(js))
+        return json.dumps({'command': 'PRINT', 'data': 'OK'})
+        #except:
+        #    raise Exception("message not JSON!: " + json.dumps(js))
 
     @staticmethod
     def get_header_mail(dir):
@@ -164,7 +164,7 @@ class Server(LineOnlyReceiver):
             if len(f.readline()) > 1:
                 return
         with open(dir, 'w') as f:
-            todump = {"login": js["login"], "password": js["password"], "name": js["name"], "open_key": js["open_key"]}
+            todump = {"login": js["login"], "password": js["password"], "name": js["name"]}
             f.write(json.dumps(todump))
 
     @staticmethod
@@ -174,18 +174,18 @@ class Server(LineOnlyReceiver):
     @staticmethod
     def user_registration(js):
         try:
-            result = {"command": "REGISTRATION"}
+            result = {"command": "REGISTRATION", "login": js['login']}
             if not (os.path.exists('Users/' + js["login"])):
                 os.mkdir("""Users\{0}""".format(js["login"]))
             user_fold_sent = """Users\{0}\mails_sent.json""".format(js["login"])
             user_fold_inbox = """Users\{0}\mails_inbox.json""".format(js["login"])
             user_folder_user_info = """Users\{0}\user_info.json""".format(js["login"])
-            users_list_dir = "Users\users.json"
+            # users_list_dir = "Users\users.json"
 
             Server.create_default_json(user_fold_sent)
             Server.create_default_json(user_fold_inbox)
             Server.create_default_user_info_json(user_folder_user_info, js)
-            Server.add_to_users_list(users_list_dir, js)
+            # Server.add_to_users_list(users_list_dir, js)
             return json.dumps(result)
         except:
             raise Exception("error with arg: " + json.dumps(js))
@@ -261,14 +261,14 @@ class Server(LineOnlyReceiver):
     def set_open_key(js):
         user_info = """Users\{0}\user_info.json""".format(js["login"])
         Server.set_item_json(user_info, 'open_key', js['open_key'])
-        return json.dumps({"status": "OK"})
+        return json.dumps({"command": 'none', "status": "OK"})
 
     @staticmethod
     def get_user_open_key(js):
-        user_info = """Users\{0}\user_info.json""".format(js["login"])
+        user_info = """Users\{0}\user_info.json""".format(js["user"])
         with open(user_info) as file:
             j = json.load(file)
-            result = {"command": "OPENKEY", "login": js["login"], "open_key": j["open_key"]}
+            result = {"command": "OPENKEY", "login": j["login"], "open_key": j["open_key"]}
         return json.dumps(result)
 
 

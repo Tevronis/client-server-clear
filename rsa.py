@@ -3,7 +3,7 @@ import random
 from fractions import gcd
 import sympy
 
-ALPH = """abcdefghijklmnopqrstuvwxyz .,!@#$%^&*()_-=+"'?><`~ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:;[]{}"""
+ALPH = "abcdefghijklmnopqrstuvwxyz .,!@#$%^&*()_-=+\"'?><`~ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:;[]{}\n\t\r"
 table = dict()
 table_rev = dict()
 for symbol in ALPH:

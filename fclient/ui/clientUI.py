@@ -3,7 +3,8 @@ import functools
 import json
 from Tkinter import *
 
-from fclient.utils import comands, currentUser
+from fclient.utils import currentUser
+from fclient.storage import comands
 from rsa import RSA
 
 # from fclient.utils import *
@@ -50,13 +51,8 @@ class ClientUI(Frame):
             name.grid(row=0, column=1)
 
             def acceptReg(event):
-                o_key, s_key = RSA(12).getKeys()
                 cmd = {"command": "REGISTRATION", "login": loginR.get(), "password": passwordR.get(),
-                       "name": name.get(), "open_key": o_key}
-                print o_key
-                print s_key
-                with open(loginR.get() + '.dat', 'w') as file:
-                    json.dump({"s_key": s_key}, file)
+                       "name": name.get()}
                 comands.append(json.dumps(cmd))
                 reg.destroy()
 

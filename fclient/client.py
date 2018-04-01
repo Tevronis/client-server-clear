@@ -7,10 +7,12 @@ from twisted.internet import reactor, tksupport
 from twisted.internet.protocol import ClientFactory
 from twisted.protocols.basic import LineOnlyReceiver
 
+from fclient.mail import to_send_message
+from fclient.storage import comands, requests
 from fclient.ui.clientUI import ClientUI
 from fclient.ui.listbox import CS_Listbox
-from fclient.user import User
-from fclient.utils import comands, LocalJSON, currentUser
+from fclient.utils import LocalJSON, currentUser, parse_request
+from rsa import RSA
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -36,47 +38,59 @@ class Client(LineOnlyReceiver):
 
     def dataReceived(self, data):
         global LAST_HASH
-        js = json.loads(data)
-        command = js['command']
-        if command == 'SENT':
-            listbox.clear()
-            for item in js['mails']:
-                setText(item)
-        if command == 'INBOX':
-            listbox.clear()
-            for item in js['mails']:
-                setText(item)
-        if command == 'GINBOX':
-            listbox.clear()
-            for item in js['mails']:
-                setText(item)
-        if command == 'MESSAGE':
-            LAST_HASH = js['HASH']
-            print LAST_HASH
+        for item in parse_request(data):
+            js = json.loads(item)
+            command = js['command']
+            if command == 'SENT':
+                listbox.clear()
+                for item in js['mails']:
+                    setText(item)
+            if command == 'INBOX':
+                listbox.clear()
+                for item in js['mails']:
+                    setText(item)
+            if command == 'GINBOX':
+                listbox.clear()
+                for item in js['mails']:
+                    setText(item)
+            if command == 'MESSAGE':
+                LAST_HASH = js['HASH']
+                print LAST_HASH
 
-            m = hashlib.md5()
-            m.update(js['MESSAGE'])
-            print m.hexdigest()
-            if m.hexdigest() != LAST_HASH:
-                print 'BAD HASH'
-            j = json.loads(js['MESSAGE'])
-            ClientUI.readMessage(j)
-        if command == 'PRINT':
-            print js['data']
-        if command == 'USER':
-            if js['status'] == "OK":
-                currentUser.setParams(js)
-                tk.title('Client ' + currentUser.login)
-            else:
-                # TODO repeat log pass
-                raise Exception("Неверный логин или пароль")
-        if command == "REGISTRATION":
-            # TODO save s_key local
-            s_key, o_key = currentUser.generateRsaKeys()
-            self.sendData(json.dumps({"command": "SETOPENKEY", "open_key": o_key, "login": currentUser.login}))
-        if command == 'OPENKEY':
-            pass
-        print data
+                m = hashlib.md5()
+                m.update(js['MESSAGE'])
+                print m.hexdigest()
+                if m.hexdigest() != LAST_HASH:
+                    print 'BAD HASH'
+                j = json.loads(js['MESSAGE'])
+                ClientUI.readMessage(j)
+            if command == 'PRINT':
+                print js['data']
+            if command == 'USER':
+                if js['status'] == "OK":
+                    currentUser.setParams(js)
+                    tk.title('Client ' + currentUser.login)
+                else:
+                    # TODO repeat log pass
+                    raise Exception("Неверный логин или пароль")
+            if command == "REGISTRATION":
+                # TODO save s_key local
+                o_key, s_key = currentUser.generateRsaKeys()
+                print o_key
+                print s_key
+                with open(js['login'] + '.dat', 'w') as file:
+                    json.dump({"s_key": s_key}, file)
+                self.sendData(json.dumps({"command": "SETOPENKEY", "open_key": o_key, "login": js['login']}))
+            if command == 'OPENKEY':
+                for request in requests:
+                    json_req = json.loads(request)
+                    if json_req['command'] == 'SETMESSAGE' and json_req["recivers"] == js["login"]:
+                        json_req["data"] = RSA.encrypt(json_req["data"], js['open_key'])
+                        self.sendData(json.dumps(json_req))
+                requests[:] = [item for item in requests if json.loads(item)['recivers'] != js["login"]]
+
+
+            print data
 
     def connectionMade(self):
         print 'Connect good'
@@ -88,13 +102,12 @@ class Client(LineOnlyReceiver):
 
         def sendMAIL(event):
             def send(event):
-                # TODO
-                #o_key = getOpenKey(to.get())
-                js = {'from': currentUser.login, 'header': title.get(),
-                      'recivers': to.get().split(),
-                      'data': msg.get("1.0", END), 'date': ''}
-                toSent = LocalJSON.addCommand(js, 'SETMESSAGE')
-                self.sendData(toSent)
+                # create message and save him to [requests]
+                # TODO созать реквест и дождаться ответа сервера с открытым ключом
+                # TODO set date
+                toSent = to_send_message(from_=currentUser.login, header=title.get(), recivers=to.get(), data=msg.get("1.0", END), date='')
+                requests.append(toSent)
+                self.sendData(json.dumps({"command": "GETOPENKEY", "user": to.get()}))
                 top.destroy()
 
             top = Toplevel()
